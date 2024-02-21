@@ -33,15 +33,23 @@ public class Main_11967_불켜기 {
 
     static class State {
         boolean light;
-        List<SwitchRC>  switchRCList;
+        List<SwitchRC> switchRCList;
 
         State(boolean light, List<SwitchRC> switchRCList){
             this.light = light;
             this.switchRCList = switchRCList;
         }
 
+        boolean getLight(){
+            return this.light;
+        }
+
         List<SwitchRC> getSwitchRCList(){
             return this.switchRCList;
+        }
+
+        void setLight(boolean light){
+            this.light = light;
         }
     }
 
@@ -53,16 +61,37 @@ public class Main_11967_불켜기 {
             this.row = row;
             this.column = column;
         }
+
+        int getRow(){
+            return this.row;
+        }
+
+        int getColumn(){
+            return this.column;
+        }
+    }
+
+    static class Location {
+        int row;
+        int column;
+
+        Location(int row, int column){
+            this.row = row;
+            this.column = column;
+        }
     }
 
     public static void main(String[] args) throws IOException{
         init();
 
+        BFS();
 
         /*
         [출력]
         베시가 불을 켤 수 있는 방의 최대 개수
          */
+        int result = getResult();
+        System.out.println(result);
     }
 
     static void init() throws IOException {
@@ -80,7 +109,7 @@ public class Main_11967_불켜기 {
 
         rooms = new State[N][N];
         isVisited = new boolean[N][N];
-        isVisited[0][0] = true;
+
         for(int m = 0; m < M; m++){
             //(1,1)은 켜져있음
             st = new StringTokenizer(br.readLine());
@@ -89,31 +118,110 @@ public class Main_11967_불켜기 {
             int switch_r = Integer.parseInt(st.nextToken()) - 1;
             int switch_c = Integer.parseInt(st.nextToken()) - 1;
 
-            //이미 있으면 list에 추가
+            //null이 아니면(이미 있으면) list에 추가
             if(rooms[room_r][room_c] != null){
                 rooms[room_r][room_c].getSwitchRCList().add(new SwitchRC(switch_r, switch_c));
             }
             //없으면 객체 생성
             else{
-                //(1,1)이면
-                if(room_r == 0 && room_c == 0){
-                    List<SwitchRC> switchRCList = new ArrayList<>();
-                    switchRCList.add(new SwitchRC(switch_r, switch_c));
-                    rooms[room_r][room_c] = new State(true, switchRCList);
+                List<SwitchRC> switchRCList = new ArrayList<>();
+                switchRCList.add(new SwitchRC(switch_r, switch_c));
+                rooms[room_r][room_c] = new State(false, switchRCList);
+            }
+        }
+        //(1,1) 불 켜주기
+        rooms[0][0].setLight(true);
+    }
+
+    static void BFS(){
+        Queue<Location> queue = new LinkedList<>();
+        queue.add(new Location(0, 0));
+
+        while(!queue.isEmpty()){
+            Location location = queue.poll();
+            int row = location.row;
+            int column = location.column;
+
+            //이미 방문한 곳이면 넘기기
+            if(isVisited[row][column]){
+                continue;
+            }
+
+            //방문처리해주기
+            isVisited[row][column] = true;
+
+            //현재 방의 스위치를 탐색해서 해당 스위치의 방이 불이 꺼져있으면 켜주고 켜져있으면 넘긴다.
+            System.out.println("row : " + row + " column : " + column);
+            //null이 아니면
+            if(rooms[row][column] != null) {
+                List<SwitchRC> switchRCList = rooms[row][column].getSwitchRCList();
+                for (int i = 0; i < switchRCList.size(); i++) {
+                    SwitchRC switchRC = switchRCList.get(i);
+                    int switch_r = switchRC.getRow();
+                    int switch_c = switchRC.getColumn();
+                    //null이면
+                    if (rooms[switch_r][switch_c] == null) {
+                        //객체 생성해서 넣어주기
+                        List<SwitchRC> switchRCListOfswitch = new ArrayList<>();
+                        switchRCListOfswitch.add(new SwitchRC(switch_r, switch_c));
+                        //켜있는 상태로 넣어주기
+                        rooms[switch_r][switch_c] = new State(true, switchRCListOfswitch);
+                        //켜준 위치 queue에 넣어주기
+                        queue.add(new Location(switch_r, switch_c));
+                    }
+                    //꺼져있으면 켜주기
+                    if (!rooms[switch_r][switch_c].getLight()) {
+                        rooms[switch_r][switch_c].setLight(true);
+                        //켜준 위치 queue에 넣어주기
+                        queue.add(new Location(switch_r, switch_c));
+                    }
                 }
-                //그 외
-                else{
-                    List<SwitchRC> switchRCList = new ArrayList<>();
-                    switchRCList.add(new SwitchRC(switch_r, switch_c));
-                    rooms[room_r][room_c] = new State(false, switchRCList);
+            }
+
+            //상하좌우 탐색해서 불 켜진 곳 queue에 넣기
+            for(int i = 0; i < 4; i++){
+                int next_r = row + dir_y[i];
+                int next_c = column + dir_x[i];
+
+                //범위 넘어가면 넘기기
+                if(next_r < 0 || next_r >= N || next_c < 0 || next_c >= N){
+                    continue;
+                }
+
+                //이미 탐색한 곳이면 넘기기
+                if(isVisited[next_r][next_c]){
+                    continue;
+                }
+                //null이면
+                if (rooms[next_r][next_c] == null) {
+                    //객체 생성해서 넣어주기
+//                    List<SwitchRC> switchRCList = new ArrayList<>();
+//                    switchRCList.add(new SwitchRC(next_r, next_c));
+//                    rooms[next_r][next_c] = new State(false, switchRCList);
+                }
+                else {
+                    if (rooms[next_r][next_c].getLight()) {
+                        queue.add(new Location(next_r, next_c));
+                    }
                 }
             }
         }
     }
 
-    static void logic(){
-        Queue<Integer> queue = new LinkedList<>();
-        queue.add()
+    static int getResult() {
+        int result = 0;
+
+        for (int r = 0; r < N; r++) {
+            for (int c = 0; c < N; c++) {
+                //비어있지 않
+                if(rooms[r][c] != null) {
+                    if (rooms[r][c].getLight()) {
+                        result++;
+                    }
+                }
+            }
+        }
+        return result;
     }
 }
 
