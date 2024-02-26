@@ -23,53 +23,13 @@ public class Main_11967_불켜기 {
     static StringBuilder sb = new StringBuilder();
     static StringTokenizer st;
 
-    static int N, M;
-    static State[][] rooms;
-    static boolean[][] isVisited;
+    static int N, M, total;
+    static boolean[][] isVisited, checked, switched;
+    static List<Location>[][] rooms;
 
     //상, 하, 좌, 우
     static int[] dir_x = {0, 0, -1, 1}; //column
     static int[] dir_y = {-1, 1, 0, 0}; //row
-
-    static class State {
-        boolean light;
-        List<SwitchRC> switchRCList;
-
-        State(boolean light, List<SwitchRC> switchRCList){
-            this.light = light;
-            this.switchRCList = switchRCList;
-        }
-
-        boolean getLight(){
-            return this.light;
-        }
-
-        List<SwitchRC> getSwitchRCList(){
-            return this.switchRCList;
-        }
-
-        void setLight(boolean light){
-            this.light = light;
-        }
-    }
-
-    static class SwitchRC {
-        int row;
-        int column;
-
-        SwitchRC(int row, int column){
-            this.row = row;
-            this.column = column;
-        }
-
-        int getRow(){
-            return this.row;
-        }
-
-        int getColumn(){
-            return this.column;
-        }
-    }
 
     static class Location {
         int row;
@@ -79,19 +39,37 @@ public class Main_11967_불켜기 {
             this.row = row;
             this.column = column;
         }
+
+        public int getRow(){
+            return this.row;
+        }
+
+        public int getColumn(){
+            return this.column;
+        }
+
+        public void makeString(){
+            System.out.println("현재 queue");
+            System.out.println("row : " + row + " column : " + column);
+        }
     }
 
     public static void main(String[] args) throws IOException{
         init();
 
-        BFS();
-
+        while(true){
+            int plus = BFS();
+            //더 킨 불이 없으면 break
+            if(plus == 0){
+                break;
+            }
+            total += plus;
+        }
         /*
         [출력]
         베시가 불을 켤 수 있는 방의 최대 개수
          */
-        int result = getResult();
-        System.out.println(result);
+        System.out.println(total);
     }
 
     static void init() throws IOException {
@@ -106,9 +84,17 @@ public class Main_11967_불켜기 {
         st = new StringTokenizer(br.readLine());
         N = Integer.parseInt(st.nextToken());
         M = Integer.parseInt(st.nextToken());
+        total = 1;
 
-        rooms = new State[N][N];
-        isVisited = new boolean[N][N];
+        isVisited = new boolean[N][N]; //방문확인
+        checked = new boolean[N][N]; //스위치 탐색한 방 확인
+        switched = new boolean[N][N]; //불 켜진 방 확인ㅌ
+        rooms = new List[N][N];
+        for(int r = 0; r < N; r++){
+            for(int c = 0; c < N; c++){
+                rooms[r][c] = new ArrayList<>();
+            }
+        }
 
         for(int m = 0; m < M; m++){
             //(1,1)은 켜져있음
@@ -118,29 +104,19 @@ public class Main_11967_불켜기 {
             int switch_r = Integer.parseInt(st.nextToken()) - 1;
             int switch_c = Integer.parseInt(st.nextToken()) - 1;
 
-            //null이 아니면(이미 있으면) list에 추가
-            if(rooms[room_r][room_c] != null){
-                rooms[room_r][room_c].getSwitchRCList().add(new SwitchRC(switch_r, switch_c));
-            }
-            //없으면 객체 생성
-            else{
-                List<SwitchRC> switchRCList = new ArrayList<>();
-                switchRCList.add(new SwitchRC(switch_r, switch_c));
-                rooms[room_r][room_c] = new State(false, switchRCList);
-            }
+            rooms[room_r][room_c].add(new Location(switch_r, switch_c));
         }
-        //(1,1) 불 켜주기
-        rooms[0][0].setLight(true);
     }
 
-    static void BFS(){
+    static int BFS(){
+        int result = 0;
         Queue<Location> queue = new LinkedList<>();
         queue.add(new Location(0, 0));
 
         while(!queue.isEmpty()){
             Location location = queue.poll();
-            int row = location.row;
-            int column = location.column;
+            int row = location.getRow();
+            int column = location.getColumn();
 
             //이미 방문한 곳이면 넘기기
             if(isVisited[row][column]){
@@ -150,78 +126,57 @@ public class Main_11967_불켜기 {
             //방문처리해주기
             isVisited[row][column] = true;
 
-            //현재 방의 스위치를 탐색해서 해당 스위치의 방이 불이 꺼져있으면 켜주고 켜져있으면 넘긴다.
-            System.out.println("row : " + row + " column : " + column);
-            //null이 아니면
-            if(rooms[row][column] != null) {
-                List<SwitchRC> switchRCList = rooms[row][column].getSwitchRCList();
-                for (int i = 0; i < switchRCList.size(); i++) {
-                    SwitchRC switchRC = switchRCList.get(i);
-                    int switch_r = switchRC.getRow();
-                    int switch_c = switchRC.getColumn();
-                    //null이면
-                    if (rooms[switch_r][switch_c] == null) {
-                        //객체 생성해서 넣어주기
-                        List<SwitchRC> switchRCListOfswitch = new ArrayList<>();
-                        switchRCListOfswitch.add(new SwitchRC(switch_r, switch_c));
-                        //켜있는 상태로 넣어주기
-                        rooms[switch_r][switch_c] = new State(true, switchRCListOfswitch);
-                        //켜준 위치 queue에 넣어주기
-                        queue.add(new Location(switch_r, switch_c));
-                    }
-                    //꺼져있으면 켜주기
-                    if (!rooms[switch_r][switch_c].getLight()) {
-                        rooms[switch_r][switch_c].setLight(true);
-                        //켜준 위치 queue에 넣어주기
-                        queue.add(new Location(switch_r, switch_c));
+            //스위치를 확인하지 않은 방이면
+            if(!checked[row][column]) {
+                //해당 방의 스위치 리스트를 가져옴
+                List<Location> switches = rooms[row][column];
+                int sizeOfSwitches = switches.size();
+                //헤당 방이 스위치를 가지고 있으면 탐색
+                if (sizeOfSwitches != 0) {
+                    for (int i = 0; i < sizeOfSwitches; i++) {
+                        //스위치와 연관된 방 위치 가져오기
+                        Location switchRoom = switches.get(i);
+                        int switchRow = switchRoom.getRow();
+                        int switchColumn = switchRoom.getColumn();
+                        //해당 스위치 방의 불이 꺼져있으면 켜주기
+                        if (!switched[switchRow][switchColumn]) {
+                            switched[switchRow][switchColumn] = true;
+                            System.out.println("불 킨 방 : [" + switchRow + "][" + switchColumn + "]");
+                            //불 킨 방 값 ++
+                            result++;
+                        }
                     }
                 }
+                //스위치 확인 표시
+                checked[row][column] = true;
             }
 
-            //상하좌우 탐색해서 불 켜진 곳 queue에 넣기
+            //사방 탐색 후 불 켜진 곳 있으면 큐에 넣어주기
             for(int i = 0; i < 4; i++){
-                int next_r = row + dir_y[i];
-                int next_c = column + dir_x[i];
+                int nextRow = row + dir_y[i];
+                int nextColumn = column + dir_x[i];
 
-                //범위 넘어가면 넘기기
-                if(next_r < 0 || next_r >= N || next_c < 0 || next_c >= N){
+                if(!isPossible(nextRow, nextColumn)){
                     continue;
                 }
 
-                //이미 탐색한 곳이면 넘기기
-                if(isVisited[next_r][next_c]){
-                    continue;
-                }
-                //null이면
-                if (rooms[next_r][next_c] == null) {
-                    //객체 생성해서 넣어주기
-//                    List<SwitchRC> switchRCList = new ArrayList<>();
-//                    switchRCList.add(new SwitchRC(next_r, next_c));
-//                    rooms[next_r][next_c] = new State(false, switchRCList);
-                }
-                else {
-                    if (rooms[next_r][next_c].getLight()) {
-                        queue.add(new Location(next_r, next_c));
-                    }
+                //불 켜져 있으면
+                if(switched[nextRow][nextColumn]){
+                    //큐에 넣어주기
+                    queue.add(new Location(nextRow, nextColumn));
                 }
             }
         }
+
+        return result;
     }
 
-    static int getResult() {
-        int result = 0;
-
-        for (int r = 0; r < N; r++) {
-            for (int c = 0; c < N; c++) {
-                //비어있지 않
-                if(rooms[r][c] != null) {
-                    if (rooms[r][c].getLight()) {
-                        result++;
-                    }
-                }
-            }
+    //범위 벗어나면 false
+    static boolean isPossible(int row, int column){
+        if(row < 0 || row >= N || column < 0 || column >= N){
+            return false;
         }
-        return result;
+        return true;
     }
 }
 
