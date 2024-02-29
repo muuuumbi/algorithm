@@ -47,11 +47,6 @@ public class Main_11967_불켜기 {
         public int getColumn(){
             return this.column;
         }
-
-        public void makeString(){
-            System.out.println("현재 queue");
-            System.out.println("row : " + row + " column : " + column);
-        }
     }
 
     public static void main(String[] args) throws IOException{
@@ -86,9 +81,9 @@ public class Main_11967_불켜기 {
         M = Integer.parseInt(st.nextToken());
         total = 1;
 
-        isVisited = new boolean[N][N]; //방문확인
         checked = new boolean[N][N]; //스위치 탐색한 방 확인
-        switched = new boolean[N][N]; //불 켜진 방 확인ㅌ
+        switched = new boolean[N][N]; //불 켜진 방 확인
+        switched[0][0] = true;
         rooms = new List[N][N];
         for(int r = 0; r < N; r++){
             for(int c = 0; c < N; c++){
@@ -109,6 +104,7 @@ public class Main_11967_불켜기 {
     }
 
     static int BFS(){
+        isVisited = new boolean[N][N]; //방문확인
         int result = 0;
         Queue<Location> queue = new LinkedList<>();
         queue.add(new Location(0, 0));
@@ -123,17 +119,13 @@ public class Main_11967_불켜기 {
                 continue;
             }
 
-            //방문처리해주기
-            isVisited[row][column] = true;
-
             //스위치를 확인하지 않은 방이면
             if(!checked[row][column]) {
                 //해당 방의 스위치 리스트를 가져옴
                 List<Location> switches = rooms[row][column];
-                int sizeOfSwitches = switches.size();
                 //헤당 방이 스위치를 가지고 있으면 탐색
-                if (sizeOfSwitches != 0) {
-                    for (int i = 0; i < sizeOfSwitches; i++) {
+                if (!switches.isEmpty()) {
+                    for (int i = 0; i < switches.size(); i++) {
                         //스위치와 연관된 방 위치 가져오기
                         Location switchRoom = switches.get(i);
                         int switchRow = switchRoom.getRow();
@@ -141,7 +133,7 @@ public class Main_11967_불켜기 {
                         //해당 스위치 방의 불이 꺼져있으면 켜주기
                         if (!switched[switchRow][switchColumn]) {
                             switched[switchRow][switchColumn] = true;
-                            System.out.println("불 킨 방 : [" + switchRow + "][" + switchColumn + "]");
+//                            System.out.println("불 킨 방 : [" + switchRow + "][" + switchColumn + "]");
                             //불 킨 방 값 ++
                             result++;
                         }
@@ -166,6 +158,8 @@ public class Main_11967_불켜기 {
                     queue.add(new Location(nextRow, nextColumn));
                 }
             }
+            //방문처리해주기
+            isVisited[row][column] = true;
         }
 
         return result;
@@ -179,15 +173,3 @@ public class Main_11967_불켜기 {
         return true;
     }
 }
-
-/*
-시간제한 2초
-복잡도 : N*N = 10,000 * M = 200,000,000
-
-1 0 0
-0 0 0
-0 0 0
-
-1. 인접한 방 중 불이 켜져있는 곳
-2. BFS?
- */
