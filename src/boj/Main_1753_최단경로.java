@@ -108,7 +108,10 @@ public class Main_1753_최단경로 {
     }
 
     static void dijkstra(){
+<<<<<<< Updated upstream
 //        PriorityQueue<Integer> pq = new PriorityQueue<>();
+=======
+>>>>>>> Stashed changes
         PriorityQueue<LinkInfo> pq = new PriorityQueue<>();
         pq.add(new LinkInfo(K, 0));
 
@@ -116,6 +119,16 @@ public class Main_1753_최단경로 {
             LinkInfo startLinkInfo = pq.poll();
             //시작 노드
             int startNode = startLinkInfo.getNode();
+<<<<<<< Updated upstream
+=======
+            //가중치 합
+            int totalEdge = startLinkInfo.getEdge();
+
+            //저장돼있는 최소가중치보다 크면 탐색할 필요 없음
+            if(totalEdge > DP[startNode]){
+                continue;
+            }
+>>>>>>> Stashed changes
 
             //연결된 간선들 탐색
             for (int i = 0; i < list[startNode].size(); i++) {
@@ -129,8 +142,13 @@ public class Main_1753_최단경로 {
                 if (DP[nextNode] > value) {
                     //값 갱신
                     DP[nextNode] = value;
+<<<<<<< Updated upstream
                     //queue에 넣어주기
                     pq.add(new LinkInfo(nextNode, nextEdge));
+=======
+                    //다음 node queue에 넣어주기
+                    pq.add(new LinkInfo(nextNode, value));
+>>>>>>> Stashed changes
                 }
             }
         }
