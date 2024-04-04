@@ -10,21 +10,33 @@ public class Solution_모의고사 {
     static final int SECOND = 8;
     static final int THIRD = 10;
     static int answer_1 = 0;
-    static
+    static int answer_2 = 0;
+    static int answer_3 = 0;
 
     public int[] solution(int[] answers) {
-        int[] answer = {};
-
         for(int i = 0; i < answers.length; i++){
             //현재 답과 비교할 반복되는 답의 index 구하기
             int first = i % FIRST;
             int second = i % SECOND;
             int third = i % THIRD;
 
-            if(number_1[first] == answers[i]){
-
+            if(answers[i] == number_1[first]){
+                answer_1++;
+            }
+            if(answers[i] == number_2[second]){
+                answer_2++;
+            }
+            if(answers[i] == number_3[third]){
+                answer_3++;
             }
         }
+
+        int index = 0;
+        index = answer_1 != 0 ? index + 1 : index;
+        index = answer_2 != 0 ? index + 1 : index;
+        index = answer_3 != 0 ? index + 1 : index;
+
+        int[] answer = new int[index];
 
         return answer;
     }
