@@ -26,7 +26,7 @@ public class Main_2206_벽부수고이동하기 {
     static int[] dir_x = {0, 0, -1, 1}; //column
     static int[] dir_y = {-1, 1, 0 ,0}; //row
 
-    static class Path{
+    static class Path implements Comparable<Path>{
         int row;
         int column;
         int length;
@@ -47,12 +47,17 @@ public class Main_2206_벽부수고이동하기 {
             return column;
         }
 
-        public boolean isBreak() {
+        public boolean getIsBreak() {
             return isBreak;
         }
 
         public int getLength() {
             return length;
+        }
+
+        @Override
+        public int compareTo(Path o) {
+            return this.length - o.getLength() >= 0 ? 1 : -1;
         }
     }
 
@@ -60,15 +65,22 @@ public class Main_2206_벽부수고이동하기 {
 
     public static void main(String[] args) throws IOException{
         init();
-        isVisted[0][0] = true;
-        DFS(0,0,false, 1);
+//        isVisted[0][0] = true;
+//        DFS(0,0,false, 1);
+        BFS();
         /*
         [출력]
         최단 거리 출력. 불가능할 때는 -1을 출력
          */
         //도달하지 못 했으면 -1
-        if(result == Integer.MAX_VALUE){
+//        if(result == Integer.MAX_VALUE){
+//            result = -1;
+//        }
+        if(DP[N-1][M-1][0] == Integer.MAX_VALUE && DP[N-1][M-1][1] == Integer.MAX_VALUE){
             result = -1;
+        }
+        else{
+            result = DP[N-1][M-1][0] >= DP[N-1][M-1][1] ? DP[N-1][M-1][1] : DP[N-1][M-1][0];
         }
         System.out.println(result);
     }
@@ -102,9 +114,9 @@ public class Main_2206_벽부수고이동하기 {
         for (int n = 0; n < N; n++) {
             for (int m = 0; m < M; m++) {
                 for(int i = 0; i < 2; i++){
-                    if(n == 0 && m == 0){
-                        DP[n][m][i] = 0;
-                    }
+//                    if(n == 0 && m == 0){
+//                        DP[n][m][i] = 0;
+//                    }
                     DP[n][m][i] = Integer.MAX_VALUE;
                 }
             }
@@ -113,16 +125,63 @@ public class Main_2206_벽부수고이동하기 {
     //BFS
     static void BFS(){
         PriorityQueue<Path> pq = new PriorityQueue<>();
-        pq.add(new Path(0, 0,0,false));
+        pq.add(new Path(0, 0,1,false));
 
         while(!pq.isEmpty()){
             Path path = pq.poll();
             //시작점
             int row = path.getRow();
             int column = path.getColumn();
-            //
+            //현재까지의 길이
             int length = path.getLength();
 
+            //벽을 부쉈는지의 여부
+            boolean isBreak = path.getIsBreak();
+            int index = 0;
+            //벽을 부쉈을 때는 1
+            if(isBreak){
+                index = 1;
+            }
+
+            //현재 탐색 중인 곳의 최소 경로보다 누적경로합이 더 크거나 같다면 넘기기
+            if(length >= DP[row][column][index]){
+                continue;
+            }
+
+            for (int i = 0; i < 4; i++) {
+                int nextRow = row + dir_y[i];
+                int nextColumn = column + dir_x[i];
+
+                //범위 벗어나거나 이미 방문한 곳이면 넘기기
+                if (!isPossible(nextRow, nextColumn)) {
+                    continue;
+                }
+
+                //이미 벽을 부순 상태이면
+                if(isBreak){
+                    //빈 공간이면 갈 수 있음
+                    if(map[nextRow][nextColumn] == 0){
+                        DP[nextRow][nextColumn][index] = length + 1;
+                        pq.add(new Path(nextRow, nextColumn, length + 1, isBreak));
+                    }
+                    //다음이 벽이면 갈 수 없음
+                }
+                //아직 벽을 부순 상태가 아니면
+                else{
+                    //빈 공간이면 갈 수 있음
+                    if(map[nextRow][nextColumn] == 0){
+                        DP[nextRow][nextColumn][index] = length + 1;
+                        pq.add(new Path(nextRow, nextColumn, length + 1, isBreak));
+                    }
+                    //벽이면 부수고 갈 수 있음.
+                    else{
+                        isBreak = true;
+                        index = 1;
+                        DP[nextRow][nextColumn][index] = length + 1;
+                        pq.add(new Path(nextRow, nextColumn, length + 1, isBreak));
+                    }
+                }
+            }
         }
     }
 
@@ -135,6 +194,16 @@ public class Main_2206_벽부수고이동하기 {
             return;
         }
 
+        //다음으로 넘어갔을 때의 길이
+        int plusLength = length + 1;
+
+        //현재의 최소경로보다 크거나 같으면 탐색 필요 없음
+        if (plusLength >= result) {
+            return;
+        }
+
+        boolean nextIsBreak = isBreak;
+
         for (int i = 0; i < 4; i++) {
             int nextRow = row + dir_y[i];
             int nextColumn = column + dir_x[i];
@@ -144,23 +213,17 @@ public class Main_2206_벽부수고이동하기 {
                 continue;
             }
 
-            //다음으로 넘어갔을 때의 길이
-            int plusLength = length + 1;
-
-            //현재의 최소경로보다 크거나 같으면 탐색 필요 없음
-            if (plusLength >= result) {
-                continue;
-            }
-
             //다음 방이 벽일 때
             if (map[nextRow][nextColumn] == 1) {
                 //현재 벽을 부순 적이 없으면 넘어갈 수 있음
                 if (!isBreak) {
                     //방문처리
                     isVisted[nextRow][nextColumn] = true;
+                    nextIsBreak = !isBreak;
                     //부수고 넘어가기
-                    DFS(nextRow, nextColumn, true, plusLength);
-                    //방문처리 풀어주기
+                    DFS(nextRow, nextColumn, nextIsBreak, plusLength);
+                    //부수지 않은 상태 & 방문처리 풀어주기
+                    nextIsBreak = isBreak;
                     isVisted[nextRow][nextColumn] = false;
                 }
                 //벽을 부순 적이 있으면 못 넘어감
@@ -172,7 +235,7 @@ public class Main_2206_벽부수고이동하기 {
             else {
                 //방문처리
                 isVisted[nextRow][nextColumn] = true;
-                DFS(nextRow, nextColumn, false, plusLength);
+                DFS(nextRow, nextColumn, nextIsBreak, plusLength);
                 //방문처리 풀어주기
                 isVisted[nextRow][nextColumn] = false;
             }
