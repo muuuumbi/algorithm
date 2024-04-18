@@ -3,12 +3,10 @@ package programmers.bruteforce;
 public class Solution_피로도 {
     static boolean[] check;
     static int[][] dungeon;
-    static int K;
     static int numOfDungeon, result;
 
     public int solution(int k, int[][] dungeons) {
         dungeon = dungeons;
-
         numOfDungeon = dungeons.length;
         check = new boolean[numOfDungeon];
         result = 0;
@@ -16,6 +14,7 @@ public class Solution_피로도 {
         for(int i = 0; i < numOfDungeon; i++){
             int now = calc(dungeon[i][0], dungeon[i][1], k);
 
+            //시작조차 안되는 던전이면 이후에도 탐험할 수 없으므로 그냥 true처리 해주기
             if(now == -1){
                 check[i] = true;
             }
