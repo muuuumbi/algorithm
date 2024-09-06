@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 그래프가 주어졌을 때, 트리의 개수를 구해라.
  */
-public class Main{
+public class Main_4803_트리{
     static BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     static StringTokenizer st;
     static StringBuilder sb = new StringBuilder();
