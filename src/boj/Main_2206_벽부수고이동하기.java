@@ -3,12 +3,14 @@ package boj;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.PriorityQueue;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.StringTokenizer;
 
 /*
-N*M 맵이 있다. 0은 이동 가능 한 곳, 1은 이동할 수 없는 벽이 있는 곳
-(1,1)에서 (N,M)의 위치까지 최단 경로로 이동하려 한다. 이때 시작하는 칸과 끝나는 칸도 포함해서 셈
+N*M 맵. 0은 이동 가능 한 곳, 1은 이동할 수 없는 벽이 있는 곳
+(1,1)에서 (N,M)의 위치까지 최단 경로로 이동.
+시작하는 칸과 끝나는 칸도 포함해서 셈
 이동 도중 한 개의 벽을 부수고 이동하는 것이 최단이라면 최대 1개까지 부수는 것이 허용
 이동은 상하좌우로 가능
 최단 경로를 구해라
@@ -19,70 +21,63 @@ public class Main_2206_벽부수고이동하기 {
 
     static int N, M, result;
     static int[][] map;
-    static int[][][] DP;
-    static boolean[][] isVisted;
+    //[row][column][해당 위치에 도달했을 때 벽을 부쉈는지 여부]
+    static boolean[][][] isVisted;
 
     //상하좌우
     static int[] dir_x = {0, 0, -1, 1}; //column
     static int[] dir_y = {-1, 1, 0 ,0}; //row
 
-    static class Path implements Comparable<Path>{
+    static class Node{
         int row;
         int column;
         int length;
-        boolean isBreak;
+        int broken; //0 : 벽을 부수지 않을 상태, 1 : 벽을 부순 상태
 
-        public Path(int row, int column, int length, boolean isBreak) {
+        Node(int row, int column, int length, int broken){
             this.row = row;
             this.column = column;
             this.length = length;
-            this.isBreak = isBreak;
+            this.broken = broken;
         }
 
         public int getRow(){
-            return row;
+            return this.row;
         }
 
-        public int getColumn() {
-            return column;
+        public int getColumn(){
+            return this.column;
         }
 
-        public boolean getIsBreak() {
-            return isBreak;
+        public int getLength(){
+            return this.length;
         }
 
-        public int getLength() {
-            return length;
+        public int getBroken(){
+            return this.broken;
         }
 
-        @Override
-        public int compareTo(Path o) {
-            return this.length - o.getLength() >= 0 ? 1 : -1;
+        public void setBroken(int broken){
+            this.broken = broken;
         }
+
+
     }
-
-    //3차원배열 -> [][]위치,[2]([0]-벽 안 부쉈을 때 최단 거리,[1]- 벽 부쉈을 때 최단 거리)
 
     public static void main(String[] args) throws IOException{
         init();
-//        isVisted[0][0] = true;
-//        DFS(0,0,false, 1);
-        BFS();
         /*
         [출력]
         최단 거리 출력. 불가능할 때는 -1을 출력
          */
-        //도달하지 못 했으면 -1
-//        if(result == Integer.MAX_VALUE){
-//            result = -1;
-//        }
-        if(DP[N-1][M-1][0] == Integer.MAX_VALUE && DP[N-1][M-1][1] == Integer.MAX_VALUE){
-            result = -1;
+        BFS();
+
+        if(result == Integer.MAX_VALUE){
+            System.out.println(-1);
         }
         else{
-            result = DP[N-1][M-1][0] >= DP[N-1][M-1][1] ? DP[N-1][M-1][1] : DP[N-1][M-1][0];
+            System.out.println(result);
         }
-        System.out.println(result);
     }
 
     static void init() throws IOException{
@@ -91,161 +86,58 @@ public class Main_2206_벽부수고이동하기 {
         1. N(1<=N<=1,000), M(1<=M<=1,000)
         2~N. M개의 숫자로 맵이 주어짐
         (1,1)과 (N,M)은 항상 0임
-
-        그래프 최대 크기 1,000,000 O(n^2) 안됨.
          */
         st = new StringTokenizer(br.readLine());
         N = Integer.parseInt(st.nextToken());
         M = Integer.parseInt(st.nextToken());
-
         result = Integer.MAX_VALUE;
 
+        isVisted = new boolean[N][M][2];
         map = new int[N][M];
-        for (int n = 0; n < N; n++) {
+        for(int n = 0; n < N; n++){
             String row = br.readLine();
-            for (int m = 0; m < M; m++) {
+            for(int m = 0; m < M; m++){
                 map[n][m] = row.charAt(m) - '0';
             }
         }
-
-        isVisted = new boolean[N][M];
-
-        DP = new int[N][M][2];
-        for (int n = 0; n < N; n++) {
-            for (int m = 0; m < M; m++) {
-                for(int i = 0; i < 2; i++){
-//                    if(n == 0 && m == 0){
-//                        DP[n][m][i] = 0;
-//                    }
-                    DP[n][m][i] = Integer.MAX_VALUE;
-                }
-            }
-        }
     }
-    //BFS
+
     static void BFS(){
-        PriorityQueue<Path> pq = new PriorityQueue<>();
-        pq.add(new Path(0, 0,1,false));
+        Queue<Node> queue = new LinkedList<>();
+        queue.add(new Node(0,0,1,0));
+        isVisted[0][0][0] = true;
 
-        while(!pq.isEmpty()){
-            Path path = pq.poll();
-            //시작점
-            int row = path.getRow();
-            int column = path.getColumn();
-            //현재까지의 길이
-            int length = path.getLength();
+        while(!queue.isEmpty()){
+            Node nowNode = queue.poll();
+            int nowRow = nowNode.getRow();
+            int nowColumn = nowNode.getColumn();
+            int nowLength = nowNode.getLength();
+            int nowBroken = nowNode.getBroken();
 
-            //벽을 부쉈는지의 여부
-            boolean isBreak = path.getIsBreak();
-            int index = 0;
-            //벽을 부쉈을 때는 1
-            if(isBreak){
-                index = 1;
+            if(nowRow == N-1 && nowColumn == M-1){
+                result = Math.min(result, nowLength);
             }
 
-            //현재 탐색 중인 곳의 최소 경로보다 누적경로합이 더 크거나 같다면 넘기기
-            if(length >= DP[row][column][index]){
-                continue;
-            }
+            for(int i = 0; i < 4; i++){
+                int nextRow = nowRow + dir_y[i];
+                int nextColumn = nowColumn + dir_x[i];
 
-            for (int i = 0; i < 4; i++) {
-                int nextRow = row + dir_y[i];
-                int nextColumn = column + dir_x[i];
-
-                //범위 벗어나거나 이미 방문한 곳이면 넘기기
-                if (!isPossible(nextRow, nextColumn)) {
+                if(nextRow < 0 || nextRow >= N || nextColumn < 0 || nextColumn >= M){
                     continue;
                 }
 
-                //이미 벽을 부순 상태이면
-                if(isBreak){
-                    //빈 공간이면 갈 수 있음
-                    if(map[nextRow][nextColumn] == 0){
-                        DP[nextRow][nextColumn][index] = length + 1;
-                        pq.add(new Path(nextRow, nextColumn, length + 1, isBreak));
-                    }
-                    //다음이 벽이면 갈 수 없음
-                }
-                //아직 벽을 부순 상태가 아니면
-                else{
-                    //빈 공간이면 갈 수 있음
-                    if(map[nextRow][nextColumn] == 0){
-                        DP[nextRow][nextColumn][index] = length + 1;
-                        pq.add(new Path(nextRow, nextColumn, length + 1, isBreak));
-                    }
-                    //벽이면 부수고 갈 수 있음.
-                    else{
-                        isBreak = true;
-                        index = 1;
-                        DP[nextRow][nextColumn][index] = length + 1;
-                        pq.add(new Path(nextRow, nextColumn, length + 1, isBreak));
-                    }
-                }
-            }
-        }
-    }
-
-    //DFS
-    static void DFS(int row, int column, boolean isBreak, int length) {
-        //현재 도착지점이면
-        if (row == N - 1 && column == M - 1) {
-            //result 갱신해주고 끝내기
-            result = result > length ? length : result;
-            return;
-        }
-
-        //다음으로 넘어갔을 때의 길이
-        int plusLength = length + 1;
-
-        //현재의 최소경로보다 크거나 같으면 탐색 필요 없음
-        if (plusLength >= result) {
-            return;
-        }
-
-        boolean nextIsBreak = isBreak;
-
-        for (int i = 0; i < 4; i++) {
-            int nextRow = row + dir_y[i];
-            int nextColumn = column + dir_x[i];
-
-            //범위 벗어나거나 이미 방문한 곳이면 넘기기
-            if (!isPossible(nextRow, nextColumn)) {
-                continue;
-            }
-
-            //다음 방이 벽일 때
-            if (map[nextRow][nextColumn] == 1) {
-                //현재 벽을 부순 적이 없으면 넘어갈 수 있음
-                if (!isBreak) {
+                //벽이 없고 아직 방문하지 않은 경우
+                if(map[nextRow][nextColumn] == 0 && !isVisted[nextRow][nextColumn][nowBroken]){
                     //방문처리
-                    isVisted[nextRow][nextColumn] = true;
-                    nextIsBreak = !isBreak;
-                    //부수고 넘어가기
-                    DFS(nextRow, nextColumn, nextIsBreak, plusLength);
-                    //부수지 않은 상태 & 방문처리 풀어주기
-                    nextIsBreak = isBreak;
-                    isVisted[nextRow][nextColumn] = false;
+                    isVisted[nextRow][nextColumn][nowBroken] = true;
+                    queue.add(new Node(nextRow, nextColumn, nowLength + 1, nowBroken));
                 }
-                //벽을 부순 적이 있으면 못 넘어감
-                else if(isBreak){
-                    continue;
+                //벽이 있고 벽을 아직 부수지 않은 경우
+                if(map[nextRow][nextColumn] == 1 && nowBroken == 0 && !isVisted[nextRow][nextColumn][1]){
+                    isVisted[nextRow][nextColumn][1] = true;
+                    queue.add(new Node(nextRow, nextColumn, nowLength + 1, 1));
                 }
             }
-            //빈 방일 때
-            else {
-                //방문처리
-                isVisted[nextRow][nextColumn] = true;
-                DFS(nextRow, nextColumn, nextIsBreak, plusLength);
-                //방문처리 풀어주기
-                isVisted[nextRow][nextColumn] = false;
-            }
         }
-    }
-
-    static boolean isPossible(int row, int column){
-        if(row < 0 || row >= N || column < 0 || column >= M || isVisted[row][column]){
-            return false;
-        }
-        return true;
     }
 }
